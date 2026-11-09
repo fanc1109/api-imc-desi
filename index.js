@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('./db');
 const app = express()
 const calcularIMC = require('./imc')
+const calcularDolar = require('./conversor')
 const port = 3000
 app.use(express.json())
 
@@ -70,6 +71,32 @@ app.post('/paciente',async(req,res)=>{
         peso,
         imc,
         status
+      });
+  } catch (error) {
+    res.status(500).json({
+      mensagem: "Erro Interno do Servidor",
+      detalhes: error.message
+    });
+  }
+})
+app.post('/converter',async(req,res)=>{
+  const {descricao,valorReal,cotacao}=req.body;
+  if(!descricao||!valorReal||!cotacao){
+      return res.status(400).json({
+        mensagem: "Verifique se todos os campos estão preenchidos",
+        detalhes: error.message
+      });
+  }
+  const {dolar}=calcularDolar(Number(valorReal),Number(cotacao));
+  try {
+      const [rows] = await db.execute('INSERT INTO `conversoes` (`descricao`, `valorReal`, `cotacao`, `dolar`) VALUES (?,?,?,?);', [descricao,valorReal,cotacao,dolar]);
+      res.status(201).json({
+        id:rows.insertId,
+        descricao,
+        valorReal,
+        cotacao,
+        dolar
+
       });
   } catch (error) {
     res.status(500).json({
